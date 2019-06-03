@@ -6,6 +6,11 @@ pipeline {
 		}
 	}
     stages {
+        stage('Check wheather') {
+            steps {
+                sh 'curl wttr.in'
+            }
+        }
         stage('test') {
             steps {
                 sh 'whoami'
