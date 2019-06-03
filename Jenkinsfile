@@ -6,10 +6,12 @@ pipeline {
 		}
 	}
     stages {
-        stage('Check wheather') {
-            steps {
-                sh 'curl wttr.in'
-            }
+        stage('Check Curl') {
+			when {branch 'master'}
+				steps {
+					sh 'curl --version'
+				}
+			}
         }
         stage('test') {
             steps {
