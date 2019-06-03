@@ -1,21 +1,15 @@
 pipeline {
-	agent {
-	 dockerfile{
-		 filename 'dockerfiles/mycustomizedubuntu'
-		 args '-v /var/run/docker.sock:/var/run/docker.sock'
-		}
+	environment {
+		REGISTRY = credentials('REGISTRY')		
+		REGISTRY_HOST = '18.130.235.14'
 	}
-	stages {	 
-		stage('Check Curl') {
-			when {branch 'master'} 
-				steps {
-					sh 'curl --version'
-				}
-			}
-		stage('Check the Weather') {
+	agent any
+	stages {
+		stage('Docker Registry Log in') {
 			steps {
-				sh 'curl wttr.in'
+				sh 'docker login ${REGISTRY_HOST} \
+					-u ${REGISTRY_USR} -p ${REGISTRY_PSW}'
 			}
 		}
-	}
+	}	 
 }
