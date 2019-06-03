@@ -6,13 +6,6 @@ pipeline {
 		}
 	}
     stages {
-        stage('Check Curl') {
-			when {branch 'master'}
-				steps {
-					sh 'curl --version'
-				}
-			}
-        }
         stage('test') {
             steps {
                 sh 'whoami'
