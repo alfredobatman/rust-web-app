@@ -20,6 +20,8 @@ pipeline {
 		DOCKER_PF_WEB= 'web-port-forward-smoke-test'
 		
 		DOCKER_PF_DB = 'db-port-forward-test'
+		
+		K8S_IT_POD = 'integration-tests'
 	}
 	agent any
 	stages {
@@ -144,6 +146,7 @@ pipeline {
 			}                        
 			steps {
 				sh 'kubectl apply -f deployment/staging/staging.yaml'
+				sh 'kubectl apply -f deployment/staging/integration_test.yaml'
 			}                
 		}
 		stage('Staging: Port Forwarding') {
@@ -220,7 +223,7 @@ pipeline {
 			steps {
 				sh 'python3 integration_tests/integration_test.py' 
 			}                
-		}
+		}		
 		stage('Staging: Integration Test - E2E') {
 					agent {
 						dockerfile {
@@ -232,7 +235,21 @@ pipeline {
 					steps {
 						sh 'python3 integration_tests/integration_e2e_test.py' 
 					}
-		}						
+		}
+		stage('Staging: Integration Test POD') {
+			agent {
+				docker {
+					image 'mendrugory/ekskubectl'
+					args '-v ${HOME}/.kube:/root/.kube \
+					-e AWS_ACCESS_KEY_ID=${AWS_STAGING_USR} \
+					-e AWS_SECRET_ACCESS_KEY=${AWS_STAGING_PSW}'
+				}
+			}
+			steps {
+					sh "kubectl exec -n staging -it ${K8S_IT_POD} \
+						-- python3 integration_tests/integration_test.py"
+			}
+		}		
 	}
 	post {
 		always {
@@ -242,6 +259,12 @@ pipeline {
                 web-port-forward-smoke-test || true'
 			// Creo que las anteriores lineas se resumen ésta:
 			sh 'docker kill ${DOCKER_IMAGE} ${DB_IMAGE} ${DOCKER_PF_WEB} ${DOCKER_PF_DB} || true'
+			sh 'docker run -v ${HOME}/.kube:/root/.kube \
+						-v /var/run/docker.sock:/var/run/docker.sock \
+						-e AWS_ACCESS_KEY_ID=${AWS_STAGING_USR} \
+						-e AWS_SECRET_ACCESS_KEY=${AWS_STAGING_PSW} \
+						mendrugory/ekskubectl \
+						kubectl delete po ${K8S_IT_POD} -n staging'  
 		}
 		success {
 			slackSend (
