@@ -232,8 +232,7 @@ pipeline {
 					steps {
 						sh 'python3 integration_tests/integration_e2e_test.py' 
 					}
-				}
-		}				
+		}						
 	}
 	post {
 		always {
