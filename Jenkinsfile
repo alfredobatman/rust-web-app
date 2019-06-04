@@ -16,6 +16,8 @@ pipeline {
         AWS_STAGING = credentials('AKIA4UF5JGYBURSIZQHX')
         AWS_STAGING_DEFAULT_REGION = 'eu-west-2'
         AWS_STAGING_CLUSTER_NAME= 'cluster-of-User1'
+		
+		DOCKER_PF_WEB= 'web-port-forward-smoke-test'
 	}
 	agent any
 	stages {
@@ -142,32 +144,31 @@ pipeline {
 				sh 'kubectl apply -f deployment/staging/staging.yaml'
 			}                
 		}
-		stage('Staging: Smoke Testing') {     
+		stage('Staging: Port Forwarding') {
 			steps {
 				script {
-					PODNAME = sh(script: "docker run \
-						-v ${HOME}/.kube:/root/.kube \
+					PODNAME = sh(script: "docker run -v ${HOME}/.kube:/root/.kube \
 						-e AWS_ACCESS_KEY_ID=${AWS_STAGING_USR} \
 						-e AWS_SECRET_ACCESS_KEY=${AWS_STAGING_PSW} \
 						mendrugory/ekskubectl \
 						kubectl get pods -n staging -l app=web \
-						-o jsonpath='{.items[0].metadata.name}'", 
-						returnStdout: true)
-					echo "The pod is ${PODNAME}"
-					sh(script: "docker run \
-						--name web-port-forward-smoke-test \
+						-o jsonpath='{.items[0].metadata.name}'", returnStdout: true)
+						echo "The pod is ${PODNAME}"
+					sh(script: "docker run --name ${DOCKER_PF_WEB} \
 						-v ${HOME}/.kube:/root/.kube -p 8888:8888 --rm \
 						-v /var/run/docker.sock:/var/run/docker.sock    \
 						-e AWS_ACCESS_KEY_ID=${AWS_STAGING_USR} \
 						-e AWS_SECRET_ACCESS_KEY=${AWS_STAGING_PSW} \
-						mendrugory/ekskubectl \
-						kubectl port-forward \
-						--address 0.0.0.0 -n staging \
-						${PODNAME} 8888:80 &")
-					sh 'sleep 10 \
-						&& docker run --net=host --rm \
-						byrnedo/alpine-curl --fail -I http://0.0.0.0:8888/health'
+						mendrugory/ekskubectl kubectl port-forward \
+						--address 0.0.0.0 \
+						-n staging ${PODNAME} 8888:80 &")
 				}
+				sh 'sleep 10'
+			}
+		}
+		stage('Staging: Smoke Testing') {     
+			steps {
+				sh 'docker run --net=host --rm byrnedo/alpine-curl --fail -I http://0.0.0.0:8888/health'
 			}
 		}
 	}
@@ -175,6 +176,8 @@ pipeline {
 		always {
 			sh 'docker kill ${DOCKER_IMAGE} ${DB_IMAGE} || true'
 			sh 'docker network rm ${DOCKER_NETWORK_NAME} || true'
+			sh 'docker kill \
+                web-port-forward-smoke-test || true'
 		}
 		success {
 			slackSend (
