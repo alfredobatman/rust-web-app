@@ -17,6 +17,10 @@ pipeline {
         AWS_STAGING_DEFAULT_REGION = 'eu-west-2'
         AWS_STAGING_CLUSTER_NAME= 'cluster-of-User1'
 		
+        AWS_PRO = credentials('AKIA4UF5JGYBURSIZQHX')
+        AWS_PRO_DEFAULT_REGION = 'eu-west-2'
+        AWS_PRO_CLUSTER_NAME= 'cluster-of-User1'
+		
 		DOCKER_PF_WEB= 'web-port-forward-smoke-test'
 		
 		DOCKER_PF_DB = 'db-port-forward-test'
@@ -249,6 +253,30 @@ pipeline {
 					sh "kubectl exec -n staging -it ${K8S_IT_POD} \
 						-- python3 integration_tests/integration_test.py"
 			}
+		}
+		stage('Connect to K8S Production') {
+			steps {
+				sh 'docker run -v ${HOME}:/root \
+					-v /var/run/docker.sock:/var/run/docker.sock \
+					-e AWS_ACCESS_KEY_ID=${AWS_PROD_USR} \
+					-e AWS_SECRET_ACCESS_KEY=${AWS_PROD_PSW} \
+					mendrugory/awscli \
+					aws eks --region ${AWS_PROD_DEFAULT_REGION} \
+					update-kubeconfig --name ${AWS_PROD_CLUSTER_NAME}'
+			}
+		}
+		stage('Deploy to Prodution') {
+			agent {
+				docker {
+					image 'mendrugory/ekskubectl'
+					args '-v ${HOME}/.kube:/root/.kube \
+						-e AWS_ACCESS_KEY_ID=${AWS_PROD_USR} \
+						-e AWS_SECRET_ACCESS_KEY=${AWS_PROD_PSW}'
+					}
+				}                        
+			steps {
+				sh 'kubectl apply -f deployment/prod/prod.yaml'
+			}                
 		}		
 	}
 	post {
