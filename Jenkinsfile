@@ -13,7 +13,7 @@ pipeline {
 		SLACK_CHANNEL = 'a-bit-of-everything'
         SLACK_TEAM_DOMAIN = 'devopspipelines'
 		
-        AWS_STAGING = credentials('AWS')
+        AWS_STAGING = credentials('AKIA4UF5JGYBURSIZQHX')
         AWS_STAGING_DEFAULT_REGION = 'eu-west-2'
         AWS_STAGING_CLUSTER_NAME= 'cluster-of-User1'
 	}
