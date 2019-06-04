@@ -21,11 +21,11 @@ pipeline {
 					-u ${REGISTRY_USR} -p ${REGISTRY_PSW}'
 			}
 		}
-		stage('Docker Build') {
-			steps {
-				sh 'docker build -t ${DOCKER_IMAGE} -f dockerfiles/Dockerfile .'
-			}
-		}
+//		stage('Docker Build') {
+//			steps {
+//				sh 'docker build -t ${DOCKER_IMAGE} -f dockerfiles/Dockerfile .'
+//			}
+//		}
 		stage('Docker Up') {
 			steps {
 				sh 'docker network create --driver=bridge \
@@ -79,6 +79,18 @@ pipeline {
 			}
 			steps {
 				sh 'python3 integration_tests/integration_test.py' 
+			}
+		}
+		stage('Integration Test: E2E') {
+			agent {
+				dockerfile {
+					filename 'dockerfiles/python.dockerfile' 
+					args '--net ${DOCKER_NETWORK_NAME} \
+							-e WEB_HOST=${DOCKER_IMAGE}'
+				}
+			}
+			steps {
+				sh 'python3 integration_tests/integration_e2e_test.py' 
 			}
 		}
 	}
