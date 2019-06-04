@@ -26,6 +26,8 @@ pipeline {
 		DOCKER_PF_DB = 'db-port-forward-test'
 		
 		K8S_IT_POD = 'integration-tests'
+		
+		DOCKER_PF_DB_PROD = 'db-port-forward-prod'
 	}
 	agent any
 	stages {
@@ -254,6 +256,25 @@ pipeline {
 //					-- python3 integration_tests/integration_test.py"
 //		}
 //	}
+		
+		stage('Friendly Reminder Authorization before Deploying') {
+			steps {
+				slackSend (channel: "${SLACK_CHANNEL}", 
+					teamDomain: "${SLACK_TEAM_DOMAIN}", 
+					tokenCredentialId: 'SLACK_TOKEN_ID', 
+					color: '#E8EA25', 
+					message: "Job '${JOB_NAME} [${BUILD_NUMBER}]' is waiting for authorization before deploying to production. (${BUILD_URL})")
+			}
+		}	
+		stage('Authorization before Deploying') {
+			input {
+				message "Let's Deploy !!!"
+				ok "Yeaaahh !!!"
+			} 
+			steps {
+				echo "Authorization before Deploying"
+			} 
+		}		
 		stage('Connect to K8S Production') {
 			steps {
 				sh 'docker run -v ${HOME}:/root \
