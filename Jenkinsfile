@@ -168,6 +168,7 @@ pipeline {
 						&& docker run --net=host --rm \
 						byrnedo/alpine-curl --fail -I http://0.0.0.0:8888/health'
 				}
+			}
 		}
 	}
 	post {
