@@ -15,6 +15,12 @@ pipeline {
 	}
 	agent any
 	stages {
+		stage('Docker Registry Log in') {
+			steps {
+				sh 'docker login ${REGISTRY_HOST} \
+					-u ${REGISTRY_USR} -p ${REGISTRY_PSW}'
+			}
+		}
 		stage('Docker Build') {
 			steps {
 				sh 'docker build -t ${DOCKER_IMAGE} -f dockerfiles/Dockerfile .'
@@ -57,6 +63,22 @@ pipeline {
 				}
 			steps {
 				sh 'diesel migration run' 
+			}
+		}
+		stage('Integration Test') {
+			agent {
+				dockerfile {
+					filename 'dockerfiles/python.dockerfile' 
+						args '--net ${DOCKER_NETWORK_NAME} \
+							-e WEB_HOST=${DOCKER_IMAGE} \
+							-e DB_HOST=${DB_IMAGE} \
+							-e DB_DATABASE=${MYSQL_DATABASE} \
+							-e DB_USER=${MYSQL_USER} \
+							-e DB_PASSWORD=${MYSQL_PASSWORD}'
+				}
+			}
+			steps {
+				sh 'python3 integration_tests/integration_test.py' 
 			}
 		}
 	}
