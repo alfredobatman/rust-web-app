@@ -12,6 +12,10 @@ pipeline {
         MYSQL_PASSWORD = 'password'
 		SLACK_CHANNEL = 'a-bit-of-everything'
         SLACK_TEAM_DOMAIN = 'devopspipelines'
+		
+        AWS_STAGING = credentials('AWS')
+        AWS_STAGING_DEFAULT_REGION = 'eu-west-2'
+        AWS_STAGING_CLUSTER_NAME= 'cluster-of-User1'
 	}
 	agent any
 	stages {
@@ -103,7 +107,18 @@ pipeline {
 		        sh 'docker push \
 		            ${REGISTRY_HOST}/${DOCKER_IMAGE}:${BUILD_NUMBER}'
 			}
-}
+		}
+		stage('Connect to K8S Staging') {
+			steps {
+				sh 'docker run -v ${HOME}:/root \
+					-v /var/run/docker.sock:/var/run/docker.sock \
+					-e AWS_ACCESS_KEY_ID=${AWS_STAGING_USR} \
+					-e AWS_SECRET_ACCESS_KEY=${AWS_STAGING_PSW} \
+					mendrugory/awscli \
+					aws eks --region ${AWS_STAGING_DEFAULT_REGION} \
+					update-kubeconfig --name ${AWS_STAGING_CLUSTER_NAME}'
+			}
+		}
 	}
 	post {
 		always {
