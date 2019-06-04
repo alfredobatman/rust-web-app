@@ -17,9 +17,9 @@ pipeline {
         AWS_STAGING_DEFAULT_REGION = 'eu-west-2'
         AWS_STAGING_CLUSTER_NAME= 'cluster-of-User1'
 		
-        AWS_PRO = credentials('AKIA4UF5JGYBURSIZQHX')
-        AWS_PRO_DEFAULT_REGION = 'eu-west-2'
-        AWS_PRO_CLUSTER_NAME= 'cluster-of-User1'
+        AWS_PROD = credentials('AKIA4UF5JGYBURSIZQHX')
+        AWS_PROD_DEFAULT_REGION = 'eu-west-2'
+        AWS_PROD_CLUSTER_NAME= 'cluster-of-User1'
 		
 		DOCKER_PF_WEB= 'web-port-forward-smoke-test'
 		
